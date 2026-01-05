@@ -309,7 +309,7 @@
                         </optgroup>
                         <optgroup label="Light modes">
                             <option value="light">LIGHT_MODE.LOG</option>
-                            <option value="soft-light">SOFT_LIGHT.PSTL</option>
+                            <option value="softlight">SOFT_LIGHT.PSTL</option>
                             <option value="paper">PAPER.WHT</option>
                            <option value="quartz">QUARTZ.TBL</option>
                         </optgroup>
@@ -365,7 +365,7 @@
             const root = document.documentElement;
             const themes = {
                 'dark': {
-                    //default dark theme with blue accents
+                    //default dark theme with blue accents [DARK MODE]
                     '--bg-color': '#0a0a0a',
                     '--block-bg': '#111',
                     '--title-bg': '#1a1a1a',
@@ -377,7 +377,7 @@
                     '--terminal-green': '#00ff00'
                 },
                 'light': {
-                    //light gray background with red accents
+                    //light gray background with red accents [LIGHT MODE]
                     '--bg-color': '#f0f0f0',
                     '--block-bg': '#ffffff',
                     '--title-bg': '#e0e0e0',
@@ -389,7 +389,7 @@
                     '--terminal-green': '#d32f2f'
                 },
                 'phos': { 
-                    //black background with bright green accents
+                    //black background with bright green accents [DARK MODE]
                     '--bg-color': '#000500',
                     '--block-bg': '#001100',
                     '--title-bg': '#002200',
@@ -401,7 +401,7 @@
                     '--terminal-green': '#00ff41'
                 },
                 'cyberpunk': { 
-                    //dark purple background with neon pink and cyan accents
+                    //dark purple background with neon pink and cyan accents [DARK MODE]
                     '--bg-color': '#0f0514',
                     '--block-bg': '#1a0828',
                     '--title-bg': '#2d0b4d',
@@ -413,7 +413,7 @@
                     '--terminal-green': '#00ffff'
                 },
                 'amber': { 
-                    //dark brown background with amber accents and text
+                    //dark brown background with amber accents and text [DARK MODE]
                     '--bg-color': '#110a00',
                     '--block-bg': '#221500',
                     '--title-bg': '#332200',
@@ -425,7 +425,7 @@
                     '--terminal-green': '#ffb000'
                 },
                 'shyne': {
-                    //navy background with yellow accents and dark yellow base
+                    //navy background with yellow accents and dark yellow base [DARK MODE]
                     '--bg-color': '#0b0c1a',
                     '--block-bg': '#1a1c33',
                     '--title-bg': '#2a2d4d',
@@ -436,41 +436,41 @@
                     '--scanline': 'rgba(255, 255, 102, 0.1)',
                     '--terminal-green': '#ffff66'
                 },
-                'soft light': {
-                    //soft light theme with pastel colors
-                    '--bg-color': '#f5f5f5',
+                'softlight': {
+                    //soft light theme with pastel colors [LIGHT MODE]
+                    '--bg-color': '#f5a5c5',
                     '--block-bg': '#ffffff',
-                    '--title-bg': '#e6e6e6',
+                    '--title-bg': '#e6b8c1',
                     '--text-main': '#333333',
-                    '--accent': '#ff99cc',
-                    '--accent-rgb': '255, 153, 204',
-                    '--border': '#cccccc',
-                    '--scanline': 'rgba(255, 153, 204, 0.05)',
-                    '--terminal-green': '#ff99cc'
+                    '--accent': '#ff6f61',
+                    '--accent-rgb': '255, 111, 97',
+                    '--border': '#cc99aa',
+                    '--scanline': 'rgba(255, 111, 97, 0.05)',
+                    '--terminal-green': '#ff6f61'
                 },
                 'paper': {
-                    //paper theme with off-white background and dark text
-                    '--bg-color': '#fafafa',
+                    //paper theme with off-white background, blue lines, red accents, and dark text [LIGHT MODE]
+                    '--bg-color': '#e2eff7',
                     '--block-bg': '#ffffff',
-                    '--title-bg': '#f0f0f0',
-                    '--text-main': '#1a1a1a',
-                    '--accent': '#3366ff',
-                    '--accent-rgb': '51, 102, 255',
-                    '--border': '#dddddd',
-                    '--scanline': 'rgba(51, 102, 255, 0.05)',
-                    '--terminal-green': '#3366ff'
+                    '--title-bg': '#c6dff2',
+                    '--text-main': '#2c3e50',
+                    '--accent': '#e74c3c',
+                    '--accent-rgb': '231, 76, 60',
+                    '--border': '#aed6f1',
+                    '--scanline': 'rgba(231, 76, 60, 0.05)',
+                    '--terminal-green': '#e74c3c'
                 },
                 'quartz': {
-                    //quartz theme with light blue background and teal accents
-                    '--bg-color': '#e0f7fa',
-                    '--block-bg': '#ffffff',
-                    '--title-bg': '#b2ebf2',
-                    '--text-main': '#004d40',
-                    '--accent': '#009688',
-                    '--accent-rgb': '0, 150, 136',
-                    '--border': '#80deea',
-                    '--scanline': 'rgba(0, 150, 136, 0.05)',
-                    '--terminal-green': '#009688'
+                    // ametrine-inspired quartz theme [LIGHT MODE]
+                    '--bg-color': '#f9f4e6', //soft gold
+                    '--block-bg': '#f3e8ff', //light lavender
+                    '--title-bg': '#ece6f7',
+                    '--text-main': '#3a2e4f',
+                    '--accent': '#7a4dd8',
+                    '--accent-rgb': '122, 77, 216',
+                    '--border': '#d8cfee',
+                    '--scanline': 'rgba(122, 77, 216, 0.04)',
+                    '--terminal-green': '#c9a441'
                 }
             };
 
