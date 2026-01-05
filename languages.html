@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notxnorand | Compiler & Interpreter Portal</title>
+    <style>
+        /* 1. Theme Variables */
+        :root {
+            --bg-color: #0a0a0a;
+            --block-bg: #111;
+            --text-main: #b0b0b0;
+            --accent: #0088ff;
+            --accent-rgb: 0, 136, 255;
+            --border: #333;
+            --terminal-green: #00ff00;
+            --title-bg: #1a1a1a;
+            --scanline: rgba(0, 136, 255, 0.07);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 8px, 6px 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(to bottom, rgba(18, 16, 16, 0) 0%, var(--scanline) 50%, rgba(18, 16, 16, 0) 100%);
+            z-index: -1;
+            pointer-events: none;
+            background-size: 100% 200%; 
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .portal-grid {
+            display: grid;
+            grid-template-columns: 280px 450px 280px;
+            gap: 20px;
+            width: fit-content;
+            z-index: 1;
+            align-items: start;
+        }
+
+        .layout-block {
+            background: var(--block-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .layout-block:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+        }
+
+        .block-title {
+            background: var(--title-bg); 
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.8rem;
+            padding: 12px 15px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .block-title::before { content: "> "; }
+
+        .block-content { 
+            padding: 20px; 
+            font-size: 0.85rem; 
+            overflow-y: auto;
+            color: var(--text-main);
+        }
+
+        /* Custom Scrollbar */
+        .block-content::-webkit-scrollbar { width: 4px; }
+        .block-content::-webkit-scrollbar-track { background: transparent; }
+        .block-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .block-content::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        .search-container {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        #portalSearch {
+            width: 90%;
+            background: transparent;
+            border: none;
+            border-left: 2px solid var(--accent);
+            padding-left: 10px;
+            color: var(--terminal-green);
+            font-family: inherit;
+            outline: none;
+            font-size: 0.8rem;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+
+        .portal-link {
+            display: block;
+            padding: 18px 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        
+        .portal-link:hover { 
+            background: rgba(var(--accent-rgb), 0.1); 
+            color: var(--accent); 
+        }
+
+        .portal-link span { 
+            display: block; 
+            font-size: 0.7rem; 
+            color: #666; 
+            margin-top: 4px;
+        }
+
+        .cmd-box {
+            background: #000;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            color: var(--terminal-green);
+            border-radius: 3px;
+            margin-top: 5px;
+            display: block;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-align: left;
+        }
+        .cmd-box:hover { border-color: var(--terminal-green); }
+
+        .sidebar-item { margin-bottom: 20px; color: var(--text-main); }
+        .sidebar-item a { color: var(--text-main); text-decoration: none; }
+        .sidebar-item a:hover { color: var(--accent); }
+        .label { color: var(--accent); font-weight: bold; display: block; margin-bottom: 4px; }
+        
+        .status-dot { color: var(--terminal-green); animation: blink 1.5s infinite; }
+
+        @keyframes blink {
+            0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
+        }
+
+        #themeDropdown {
+            background: #000;
+            color: var(--terminal-green);
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 0.75rem;
+            padding: 4px;
+            width: 100%;
+            margin-top: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        footer { 
+            margin-top: 30px; 
+            color: #444; 
+            font-size: 0.7rem; 
+            letter-spacing: 2px; 
+        }
+
+        @media (max-width: 1050px) {
+            .portal-grid { grid-template-columns: 1fr; width: 90%; }
+            body { padding: 40px 0; }
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        /* hide the scrollbar */
+        #portalList::-webkit-scrollbar {
+            display: none;
+        }
+        /* Languages grid styles */
+        .languages-section { width: 90%; max-width: 1100px; margin: 40px auto; }
+        .languages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .lang-card { background: var(--block-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .lang-card:hover { transform: translateY(-6px); box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.12); border-color: var(--accent); }
+        .lang-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; font-size: 1rem; }
+        .lang-desc { font-size: 0.85rem; color: var(--text-main); margin-bottom: 10px; min-height: 48px; }
+        .tags { margin-top: 6px; }
+        .tag { display:inline-block; background: rgba(var(--accent-rgb),0.06); color:var(--accent); border:1px solid rgba(var(--accent-rgb),0.12); padding:4px 8px; font-size:0.7rem; margin:3px 6px 0 0; border-radius:999px; }
+    </style>
+</head>
+<body>
+    <section class="languages-section">
+        <div class="block-title">Languages</div>
+        <div class="block-content">
+            <button onclick="window.location.href='index.html'">← BACK TO PORTAL</button>
+            <br><br>
+            <div class="languages-grid">
+                <article class="lang-card">
+                    <div class="lang-title">Python</div>
+                    <div class="lang-desc">High-level, interpreted language good for scripting, data, and rapid development.</div>
+                    <div class="tags">
+                        <span class="tag">interpreted</span>
+                        <span class="tag">dynamic</span>
+                        <span class="tag">scripting</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">JavaScript</div>
+                    <div class="lang-desc">Ubiquitous language for web development; runs in browser and on servers (Node.js).</div>
+                    <div class="tags">
+                        <span class="tag">interpreted</span>
+                        <span class="tag">web</span>
+                        <span class="tag">dynamic</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">C</div>
+                    <div class="lang-desc">Minimal, low-level systems language; compiled and performant, used for OS and embedded work.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">systems</span>
+                        <span class="tag">procedural</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">C++</div>
+                    <div class="lang-desc">Extension of C with OOP and generic programming. Used in performance-critical applications and games.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">systems</span>
+                        <span class="tag">oop</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Java</div>
+                    <div class="lang-desc">Statically-typed, JVM-based language popular for large-scale applications and Android development.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">jvm</span>
+                        <span class="tag">oop</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Rust</div>
+                    <div class="lang-desc">Modern systems language focused on safety and performance with zero-cost abstractions.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">memory-safe</span>
+                        <span class="tag">systems</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Go</div>
+                    <div class="lang-desc">Simple, compiled language from Google suited for networked services and concurrency.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">concurrency</span>
+                        <span class="tag">network</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Ruby</div>
+                    <div class="lang-desc">Dynamic, object-oriented language known for its elegant syntax and web framework Ruby on Rails.</div>
+                    <div class="tags">
+                        <span class="tag">interpreted</span>
+                        <span class="tag">dynamic</span>
+                        <span class="tag">web</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Lua</div>
+                    <div class="lang-desc">Lightweight, embeddable scripting language often used in game development and embedded systems.</div>
+                    <div class="tags">
+                        <span class="tag">interpreted</span>
+                        <span class="tag">scripting</span>
+                        <span class="tag">embedded</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">C#</div>
+                    <div class="lang-desc">Versatile language developed by Microsoft, used for web, desktop, and game development with .NET.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">oop</span>
+                        <span class="tag">.net</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">TypeScript</div>
+                    <div class="lang-desc">Superset of JavaScript adding static types, enhancing code quality and maintainability.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">static-typed</span>
+                        <span class="tag">web</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">PHP</div>
+                    <div class="lang-desc">Server-side scripting language widely used for web development and dynamic content generation.</div>
+                    <div class="tags">
+                        <span class="tag">interpreted</span>
+                        <span class="tag">web</span>
+                        <span class="tag">scripting</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Swift</div>
+                    <div class="lang-desc">Powerful language developed by Apple for iOS and macOS app development with modern syntax.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">ios</span>
+                        <span class="tag">modern</span>
+                    </div>
+                </article>
+                
+                <article class="lang-card">
+                    <div class="lang-title">Kotlin</div>
+                    <div class="lang-desc">Modern JVM language with concise syntax, null safety, and full Java interoperability.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">jvm</span>
+                        <span class="tag">modern</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Julia</div>
+                    <div class="lang-desc">High-performance language for numerical computing and scientific workloads.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">scientific</span>
+                        <span class="tag">numeric</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Haskell</div>
+                    <div class="lang-desc">Purely functional language emphasizing immutability, type safety, and lazy evaluation.</div>
+                    <div class="tags">
+                        <span class="tag">functional</span>
+                        <span class="tag">static-typed</span>
+                        <span class="tag">compiled</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Scala</div>
+                    <div class="lang-desc">Hybrid functional and object-oriented language running on the JVM.</div>
+                    <div class="tags">
+                        <span class="tag">jvm</span>
+                        <span class="tag">functional</span>
+                        <span class="tag">oop</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">D</div>
+                    <div class="lang-desc">Systems language combining C-like performance with modern safety features.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">systems</span>
+                        <span class="tag">modern</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Assembly</div>
+                    <div class="lang-desc">Architecture-specific low-level language providing direct hardware control.</div>
+                    <div class="tags">
+                        <span class="tag">low-level</span>
+                        <span class="tag">hardware</span>
+                        <span class="tag">systems</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">WebAssembly (Wasm)</div>
+                    <div class="lang-desc">Binary instruction format designed for fast, safe execution on the web.</div>
+                    <div class="tags">
+                        <span class="tag">binary</span>
+                        <span class="tag">web</span>
+                        <span class="tag">portable</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Fortran</div>
+                    <div class="lang-desc">Legacy yet powerful language optimized for high-performance numerical computation.</div>
+                    <div class="tags">
+                        <span class="tag">compiled</span>
+                        <span class="tag">scientific</span>
+                        <span class="tag">legacy</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">COBOL</div>
+                    <div class="lang-desc">Enterprise-focused language still used in banking, finance, and government systems.</div>
+                    <div class="tags">
+                        <span class="tag">legacy</span>
+                        <span class="tag">enterprise</span>
+                        <span class="tag">business</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Lisp</div>
+                    <div class="lang-desc">Family of languages known for symbolic computation and powerful macro systems.</div>
+                    <div class="tags">
+                        <span class="tag">functional</span>
+                        <span class="tag">symbolic</span>
+                        <span class="tag">dynamic</span>
+                    </div>
+                </article>
+
+                <article class="lang-card">
+                    <div class="lang-title">Prolog</div>
+                    <div class="lang-desc">Logic programming language based on formal logic and rule-based inference.</div>
+                    <div class="tags">
+                        <span class="tag">logic</span>
+                        <span class="tag">ai</span>
+                        <span class="tag">declarative</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        //load theme if available
+        function getthemeFromStorage() {
+            return localStorage.getItem('preferredTheme');
+        }
+
+        const savedTheme = getthemeFromStorage();
+        if (savedTheme) {
+            changeTheme(savedTheme);
+            document.getElementById('themeDropdown').value = savedTheme;
+        }
+
+        function changeTheme(theme) {
+            const root = document.documentElement;
+            const themes = {
+                'dark': {
+                    //default dark theme with blue accents [DARK MODE]
+                    '--bg-color': '#0a0a0a',
+                    '--block-bg': '#111',
+                    '--title-bg': '#1a1a1a',
+                    '--text-main': '#b0b0b0',
+                    '--accent': '#0088ff',
+                    '--accent-rgb': '0, 136, 255',
+                    '--border': '#333',
+                    '--scanline': 'rgba(0, 136, 255, 0.07)',
+                    '--terminal-green': '#00ff00'
+                },
+                'light': {
+                    //light gray background with red accents [LIGHT MODE]
+                    '--bg-color': '#f0f0f0',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#e0e0e0',
+                    '--text-main': '#222222',
+                    '--accent': '#d32f2f',
+                    '--accent-rgb': '211, 47, 47',
+                    '--border': '#ccc',
+                    '--scanline': 'rgba(0, 0, 0, 0.03)',
+                    '--terminal-green': '#d32f2f'
+                },
+                'phos': { 
+                    //black background with bright green accents [DARK MODE]
+                    '--bg-color': '#000500',
+                    '--block-bg': '#001100',
+                    '--title-bg': '#002200',
+                    '--text-main': '#00ff41',
+                    '--accent': '#00ff41',
+                    '--accent-rgb': '0, 255, 65',
+                    '--border': '#004400',
+                    '--scanline': 'rgba(0, 255, 65, 0.1)',
+                    '--terminal-green': '#00ff41'
+                },
+                'cyberpunk': { 
+                    //dark purple background with neon pink and cyan accents [DARK MODE]
+                    '--bg-color': '#0f0514',
+                    '--block-bg': '#1a0828',
+                    '--title-bg': '#2d0b4d',
+                    '--text-main': '#ff00ff',
+                    '--accent': '#00ffff',
+                    '--accent-rgb': '0, 255, 255',
+                    '--border': '#ff00ff',
+                    '--scanline': 'rgba(255, 0, 255, 0.1)',
+                    '--terminal-green': '#00ffff'
+                },
+                'amber': { 
+                    //dark brown background with amber accents and text [DARK MODE]
+                    '--bg-color': '#110a00',
+                    '--block-bg': '#221500',
+                    '--title-bg': '#332200',
+                    '--text-main': '#ffb000',
+                    '--accent': '#ffb000',
+                    '--accent-rgb': '255, 176, 0',
+                    '--border': '#553300',
+                    '--scanline': 'rgba(255, 176, 0, 0.1)',
+                    '--terminal-green': '#ffb000'
+                },
+                'shyne': {
+                    //navy background with yellow accents and dark yellow base [DARK MODE]
+                    '--bg-color': '#0b0c1a',
+                    '--block-bg': '#1a1c33',
+                    '--title-bg': '#2a2d4d',
+                    '--text-main': '#ffff66',
+                    '--accent': '#ffff66',
+                    '--accent-rgb': '255, 255, 102',
+                    '--border': '#666633',
+                    '--scanline': 'rgba(255, 255, 102, 0.1)',
+                    '--terminal-green': '#ffff66'
+                },
+                'softlight': {
+                    //soft light theme with pastel colors [LIGHT MODE]
+                    '--bg-color': '#f5a5c5',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#e6b8c1',
+                    '--text-main': '#333333',
+                    '--accent': '#ff6f61',
+                    '--accent-rgb': '255, 111, 97',
+                    '--border': '#cc99aa',
+                    '--scanline': 'rgba(255, 111, 97, 0.05)',
+                    '--terminal-green': '#ff6f61'
+                },
+                'paper': {
+                    //paper theme with off-white background, blue lines, red accents, and dark text [LIGHT MODE]
+                    '--bg-color': '#e2eff7',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#c6dff2',
+                    '--text-main': '#2c3e50',
+                    '--accent': '#e74c3c',
+                    '--accent-rgb': '231, 76, 60',
+                    '--border': '#aed6f1',
+                    '--scanline': 'rgba(231, 76, 60, 0.05)',
+                    '--terminal-green': '#e74c3c'
+                },
+                'quartz': {
+                    // ametrine-inspired quartz theme [LIGHT MODE]
+                    '--bg-color': '#f9f4e6', //soft gold
+                    '--block-bg': '#f3e8ff', //light lavender
+                    '--title-bg': '#ece6f7',
+                    '--text-main': '#3a2e4f',
+                    '--accent': '#7a4dd8',
+                    '--accent-rgb': '122, 77, 216',
+                    '--border': '#d8cfee',
+                    '--scanline': 'rgba(122, 77, 216, 0.04)',
+                    '--terminal-green': '#c9a441'
+                }
+            };
+
+            const selected = themes[theme] || themes['dark'];
+            for (let [key, value] of Object.entries(selected)) {
+                root.style.setProperty(key, value);
+            }
+        }   
+    </script>
+</body>
+</html>
