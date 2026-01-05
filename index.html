@@ -300,12 +300,19 @@
                     <span class="label"><button onclick="saveThemePreference(document.getElementById('themeDropdown').value)">SAVE THEME</button></span>
                     <span class="label">THEME_SELECT:</span>
                     <select id="themeDropdown" onchange="changeTheme(this.value)">
-                        <option value="dark">DEFAULT.SYS</option>
-                        <option value="light">LIGHT_MODE.LOG</option>
-                        <option value="phos">PHOSPHOR.GRN</option>
-                        <option value="cyberpunk">CYBERPUNK.VLT</option>
-                        <option value="amber">AMBER.CRT</option>
-                        <option value="shyne">SHYNE.BLU</option>
+                        <optgroup label="Dark modes">
+                            <option value="dark">DEFAULT.SYS</option>
+                            <option value="phos">PHOSPHOR.GRN</option>
+                            <option value="cyberpunk">CYBERPUNK.VLT</option>
+                            <option value="amber">AMBER.CRT</option>
+                            <option value="shyne">SHYNE.BLU</option>
+                        </optgroup>
+                        <optgroup label="Light modes">
+                            <option value="light">LIGHT_MODE.LOG</option>
+                            <option value="soft-light">SOFT_LIGHT.PSTL</option>
+                            <option value="paper">PAPER.WHT</option>
+                           <option value="quartz">QUARTZ.TBL</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="sidebar-item"><span class="label">MODULES:</span> <span id="linkCount">0</span> Loaded</div>
@@ -428,6 +435,42 @@
                     '--border': '#666633',
                     '--scanline': 'rgba(255, 255, 102, 0.1)',
                     '--terminal-green': '#ffff66'
+                },
+                'soft light': {
+                    //soft light theme with pastel colors
+                    '--bg-color': '#f5f5f5',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#e6e6e6',
+                    '--text-main': '#333333',
+                    '--accent': '#ff99cc',
+                    '--accent-rgb': '255, 153, 204',
+                    '--border': '#cccccc',
+                    '--scanline': 'rgba(255, 153, 204, 0.05)',
+                    '--terminal-green': '#ff99cc'
+                },
+                'paper': {
+                    //paper theme with off-white background and dark text
+                    '--bg-color': '#fafafa',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#f0f0f0',
+                    '--text-main': '#1a1a1a',
+                    '--accent': '#3366ff',
+                    '--accent-rgb': '51, 102, 255',
+                    '--border': '#dddddd',
+                    '--scanline': 'rgba(51, 102, 255, 0.05)',
+                    '--terminal-green': '#3366ff'
+                },
+                'quartz': {
+                    //quartz theme with light blue background and teal accents
+                    '--bg-color': '#e0f7fa',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#b2ebf2',
+                    '--text-main': '#004d40',
+                    '--accent': '#009688',
+                    '--accent-rgb': '0, 150, 136',
+                    '--border': '#80deea',
+                    '--scanline': 'rgba(0, 150, 136, 0.05)',
+                    '--terminal-green': '#009688'
                 }
             };
 
@@ -445,4 +488,5 @@
         }
     </script>
 </body>
+
 </html>
