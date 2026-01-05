@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notxnorand | Compiler & Interpreter Portal</title>
+    <style>
+        /* 1. Theme Variables */
+        :root {
+            --bg-color: #0a0a0a;
+            --block-bg: #111;
+            --text-main: #b0b0b0;
+            --accent: #0088ff;
+            --accent-rgb: 0, 136, 255;
+            --border: #333;
+            --terminal-green: #00ff00;
+            --title-bg: #1a1a1a;
+            --scanline: rgba(0, 136, 255, 0.07);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 8px, 6px 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(to bottom, rgba(18, 16, 16, 0) 0%, var(--scanline) 50%, rgba(18, 16, 16, 0) 100%);
+            z-index: -1;
+            pointer-events: none;
+            background-size: 100% 200%; 
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .portal-grid {
+            display: grid;
+            grid-template-columns: 280px 450px 280px;
+            gap: 20px;
+            width: fit-content;
+            z-index: 1;
+            align-items: start;
+        }
+
+        .layout-block {
+            background: var(--block-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .layout-block:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+        }
+
+        .block-title {
+            background: var(--title-bg); 
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.8rem;
+            padding: 12px 15px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .block-title::before { content: "> "; }
+
+        .block-content { 
+            padding: 20px; 
+            font-size: 0.85rem; 
+            overflow-y: auto;
+            color: var(--text-main);
+        }
+
+        /* Custom Scrollbar */
+        .block-content::-webkit-scrollbar { width: 4px; }
+        .block-content::-webkit-scrollbar-track { background: transparent; }
+        .block-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .block-content::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        .search-container {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        #portalSearch {
+            width: 90%;
+            background: transparent;
+            border: none;
+            border-left: 2px solid var(--accent);
+            padding-left: 10px;
+            color: var(--terminal-green);
+            font-family: inherit;
+            outline: none;
+            font-size: 0.8rem;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+
+        .portal-link {
+            display: block;
+            padding: 18px 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        
+        .portal-link:hover { 
+            background: rgba(var(--accent-rgb), 0.1); 
+            color: var(--accent); 
+        }
+
+        .portal-link span { 
+            display: block; 
+            font-size: 0.7rem; 
+            color: #666; 
+            margin-top: 4px;
+        }
+
+        .cmd-box {
+            background: #000;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            color: var(--terminal-green);
+            border-radius: 3px;
+            margin-top: 5px;
+            display: block;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-align: left;
+        }
+        .cmd-box:hover { border-color: var(--terminal-green); }
+
+        .sidebar-item { margin-bottom: 20px; color: var(--text-main); }
+        .sidebar-item a { color: var(--text-main); text-decoration: none; }
+        .sidebar-item a:hover { color: var(--accent); }
+        .label { color: var(--accent); font-weight: bold; display: block; margin-bottom: 4px; }
+        
+        .status-dot { color: var(--terminal-green); animation: blink 1.5s infinite; }
+
+        @keyframes blink {
+            0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
+        }
+
+        #themeDropdown {
+            background: #000;
+            color: var(--terminal-green);
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 0.75rem;
+            padding: 4px;
+            width: 100%;
+            margin-top: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        footer { 
+            margin-top: 30px; 
+            color: #444; 
+            font-size: 0.7rem; 
+            letter-spacing: 2px; 
+        }
+
+        @media (max-width: 1050px) {
+            .portal-grid { grid-template-columns: 1fr; width: 90%; }
+            body { padding: 40px 0; }
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        /* hide the scrollbar */
+        #portalList::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body onload="updateCounts()">
+
+    <div class="portal-grid">
+        <aside class="layout-block">
+            <div class="block-title">Local Downloads</div>
+            <div class="block-content" id="localList">
+                <div class="sidebar-item"><span class="label">PYTHON</span><a href="https://www.python.org/downloads/" style="color: #b0b0b0;">python.org</a></div>
+
+                <div class="sidebar-item"><span class="label">JAVA_JDK</span><a href="https://adoptium.net" style="color: #b0b0b0;">adoptium.net</a></div>
+
+                <div class="sidebar-item"><span class="label">RUST_CARGO</span><a href="https://rustup.rs" style="color: #b0b0b0;">rustup.rs</a></div>
+
+                <div class="sidebar-item"><span class="label">C++_GCC</span><a href="https://www.mingw-w64.org/" style="color: #b0b0b0;">MinGW-w64</a></div>
+
+                <div class="sidebar-item"><span class="label">GO_LANG</span><a href="https://go.dev/dl/" style="color: #b0b0b0;">go.dev</a></div>
+                <div class="sidebar-item"><span class="label">RUBY</span><a href="https://www.ruby-lang.org/en/downloads/" style="color: #b0b0b0;">ruby-lang.org</a></div>
+                <div class="sidebar-item"><span class="label">LUA</span><a href="https://www.lua.org/download.html" style="color: #b0b0b0;">lua.org</a></div>
+                <div class="sidebar-item"><span class="label">DOTNET</span><a href="https://dotnet.microsoft.com/download/dotnet" style="color: #b0b0b0;">dotnet.microsoft.com</a></div>
+                <div class="sidebar-item"><span class="label">PERL</span><a href="https://www.perl.org/get.html" style="color: #b0b0b0;">perl.org</a></div>
+                <div class="sidebar-item"><span class="label">R_PROJ</span><a href="https://www.r-project.org/" style="color: #b0b0b0;">r-project.org</a></div>
+                <div class="sidebar-item"><span class="label">FORTRAN</span><a href="https://fortran-lang.org/" style="color: #b0b0b0;">fortran-lang.org</a></div>
+                <div class="sidebar-item"><span class="label">SQL_SRV</span><a href="https://www.mysql.com/" style="color: #b0b0b0;">mysql.com</a></div>
+                <div class="sidebar-item"><span class="label">NODE_JS</span><a href="https://nodejs.org/en/download/" style="color: #b0b0b0;">nodejs.org</a></div>
+                <div class="sidebar-item"><span class="label">SWIFT</span><a href="https://swift.org/download/" style="color: #b0b0b0;">swift.org</a></div>
+                <div class="sidebar-item"><span class="label">KOTLIN</span><a href="https://kotlinlang.org/docs/command-line.html" style="color: #b0b0b0;">kotlinlang.org</a></div>
+                <div class="sidebar-item"><span class="label">ASSEMBLY</span><a href="https://www.nasm.us/" style="color: #b0b0b0;">nasm.us</a></div>
+                <div class="sidebar-item"><span class="label">CSS</span><a href="https://developer.mozilla.org/en-US/docs/Web/CSS" style="color: #b0b0b0;">developer.mozilla.org</a></div>
+                <div class="sidebar-item"><span class="label">HTML</span><a href="https://developer.mozilla.org/en-US/docs/Web/HTML" style="color: #b0b0b0;">developer.mozilla.org</a></div>
+                <div class="sidebar-item"><span class="label">Q#</span><a href="https://developer.microsoft.com/en-us/quantum/" style="color: #b0b0b0;">microsoft.com</a></div>
+                <div class="sidebar-item"><span class="label">DART</span><a href="https://dart.dev/get-dart" style="color: #b0b0b0;">dart.dev</a></div>
+                <div class="sidebar-item"><span class="label">SCALA</span><a href="https://www.scala-lang.org/download/" style="color: #b0b0b0;">scala-lang.org</a></div>
+                <div class="sidebar-item"><span class="label">F#</span><a href="https://dotnet.microsoft.com/en-us/download/dotnet/5.0" style="color: #b0b0b0;">dotnet.microsoft.com</a></div>
+                <div class="sidebar-item"><span class="label">WASM</span><a href="https://webassembly.org/getting-started/developers-guide/" style="color: #b0b0b0;">webassembly.org</a></div>
+                <div class="sidebar-item"><span class="label">JULIA</span><a href="https://julialang.org/downloads/" style="color: #b0b0b0;">julialang.org</a></div>
+                <div class="sidebar-item"><span class="label">MATHEMATICA</span><a href="https://www.wolfram.com/mathematica/trial/" style="color: #b0b0b0;">wolfram.com</a></div>
+                <div class="sidebar-item"><span class="label">COBOL</span><a href="https://openmainframeproject.github.io/cobol-programming-course/" style="color: #b0b0b0;">openmainframeproject.github.io</a></div>
+                <div class="sidebar-item"><span class="label">LISP</span><a href="https://common-lisp.net/project/cmucl/" style="color: #b0b0b0;">common-lisp.net</a></div>
+                <div class="sidebar-item"><span class="label">PROLOG</span><a href="https://www.swi-prolog.org/download/stable" style="color: #b0b0b0;">swi-prolog.org</a></div>
+                <div class="sidebar-item"><span class="label">GROOVY</span><a href="https://groovy-lang.org/download.html" style="color: #b0b0b0;">groovy-lang.org</a></div>
+                <div class="sidebar-item"><span class="label">ERLANG</span><a href="https://www.erlang.org/downloads" style="color: #b0b0b0;">erlang.org</a></div>
+                <div class="sidebar-item"><span class="label">LOGO</span><a href="https://sourceforge.net/projects/mswlogo/" style="color: #b0b0b0;">sourceforge.net</a></div>
+                <div class="sidebar-item"><span class="label">DELPHI</span><a href="https://www.embarcadero.com/products/delphi/starter/free-download" style="color: #b0b0b0;">embarcadero.com</a></div>
+                <div class="sidebar-item"><span class="label">BASIC</span><a href="https://www.freebasic.net/get" style="color: #b0b0b0;">freebasic.net</a></div>
+                <div class="sidebar-item"><span class="label">APL</span><a href="https://www.dyalog.com/download-zone.htm" style="color: #b0b0b0;">dyalog.com</a></div>
+            </div>
+        </aside>
+
+        <main class="layout-block">
+            <div class="block-title">Web Interpreters</div>
+            <div class="search-container">
+                <input type="text" id="portalSearch" placeholder="Search modules..." onkeyup="filterPortal()">
+            </div>
+            <ul id="portalList">
+                <li><a href="https://replit.com" target="_blank" class="portal-link">REPLIT.EXE<span>/cloud_ide/multi_lang</span></a></li>
+                <li><a href="https://godbolt.org" target="_blank" class="portal-link">GODBOLT.OBJ<span>/compiler_explorer/assembly</span></a></li>
+                <li><a href="https://codepen.io" target="_blank" class="portal-link">CODEPEN.JS<span>/frontend/html_css_js</span></a></li>
+                <li><a href="https://sqlfiddle.com" target="_blank" class="portal-link">SQLFIDDLE.DB<span>/database_testing</span></a></li>
+                <li><a href="https://www.onlinegdb.com" target="_blank" class="portal-link">ONLINEGDB.CPP<span>/cpp_debugger/advanced</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_ruby_online.php" target="_blank" class="portal-link">TUTORIALS_RB<span>/ruby_interpreter</span></a></li>
+                <li><a href="https://www.programiz.com/python-programming/online-compiler/" target="_blank" class="portal-link">PROGRAMIZ_PY<span>/python_interpreter</span></a></li>
+                <li><a href="https://www.jdoodle.com/online-java-compiler/" target="_blank" class="portal-link">JDOODLE_JAVA<span>/java_interpreter</span></a></li>
+                <li><a href="https://www.stackoverflow.com/questions/tagged/online-ide" target="_blank" class="portal-link">STACKOVERFLOW_IDE<span>/community_shared</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_c_online.php" target="_blank" class="portal-link">TUTORIALS_C<span>/c_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_cpp_online.php" target="_blank" class="portal-link">TUTORIALS_CPP<span>/cpp_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_rust_online.php" target="_blank" class="portal-link">TUTORIALS_RS<span>/rust_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_go_online.php" target="_blank" class="portal-link">TUTORIALS_GO<span>/go_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_perl_online.php" target="_blank" class="portal-link">TUTORIALS_PL<span>/perl_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_lua_online.php" target="_blank" class="portal-link">TUTORIALS_LUA<span>/lua_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_r_online.php" target="_blank" class="portal-link">TUTORIALS_R<span>/r_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_swift_online.php" target="_blank" class="portal-link">TUTORIALS_SWIFT<span>/swift_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_kotlin_online.php" target="_blank" class="portal-link">TUTORIALS_KT<span>/kotlin_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_dart_online.php" target="_blank" class="portal-link">TUTORIALS_DART<span>/dart_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_scala_online.php" target="_blank" class="portal-link">TUTORIALS_SCALA<span>/scala_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_fsharp_online.php" target="_blank" class="portal-link">TUTORIALS_FS<span>/fsharp_interpreter</span></a></li>
+                <li><a href="https://www.tutorialspoint.com/compile_julia_online.php" target="_blank" class="portal-link">TUTORIALS_JL<span>/julia_interpreter</span></a></li>
+                <li><a href="https://www.trinket.io/" target="_blank" class="portal-link">TRINKET<span>/python_interpreter</span></a></li>
+            </ul>
+        </main>
+
+        <aside class="layout-block">
+            <div class="block-title">System Status</div>
+            <div class="block-content">
+                <div class="sidebar-item"><span class="label">PORTAL_USER:</span> Notxnorand</div>
+                <div class="sidebar-item">
+                    <span class="label"><button onclick="saveThemePreference(document.getElementById('themeDropdown').value)">SAVE THEME</button></span>
+                    <span class="label">THEME_SELECT:</span>
+                    <select id="themeDropdown" onchange="changeTheme(this.value)">
+                        <option value="dark">DEFAULT.SYS</option>
+                        <option value="light">LIGHT_MODE.LOG</option>
+                        <option value="phos">PHOSPHOR.GRN</option>
+                        <option value="cyberpunk">CYBERPUNK.VLT</option>
+                        <option value="amber">AMBER.CRT</option>
+                        <option value="shyne">SHYNE.BLU</option>
+                    </select>
+                </div>
+                <div class="sidebar-item"><span class="label">MODULES:</span> <span id="linkCount">0</span> Loaded</div>
+                <div class="sidebar-item"><span class="label">UPLINK:</span> <span class="status-dot">●</span> Optimized</div>
+                <div class="sidebar-item">
+                    <span class="label">VERIFY_TOOLS:</span>
+                    <code class="cmd-box" onclick="copyCmd('python --version')">python --version</code>
+                    <code class="cmd-box" onclick="copyCmd('gcc --version')">gcc --version</code>
+                    <code class="cmd-box" onclick="copyCmd('node --version')">node --version</code>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer>[ DEV_PORTAL v2.3.0 // STABLE_BUILD // 2026 ]</footer>
+
+    <script>
+        //load theme if available
+        function getthemeFromStorage() {
+            return localStorage.getItem('preferredTheme');
+        }
+
+        const savedTheme = getthemeFromStorage();
+        if (savedTheme) {
+            changeTheme(savedTheme);
+            document.getElementById('themeDropdown').value = savedTheme;
+        }
+
+        function updateCounts() {
+            const online = document.querySelectorAll("#portalList li").length;
+            const local = document.querySelectorAll("#localList .sidebar-item").length;
+            document.getElementById("linkCount").innerText = (online + local);
+        }
+
+        function filterPortal() {
+            let input = document.getElementById('portalSearch').value.toUpperCase();
+            let items = document.querySelectorAll("#portalList li");
+            items.forEach(li => {
+                let text = li.textContent || li.innerText;
+                li.style.display = text.toUpperCase().includes(input) ? "" : "none";
+            });
+        }
+
+        function copyCmd(text) {
+            navigator.clipboard.writeText(text);
+            alert("Terminal command copied: " + text);
+        }
+
+        function changeTheme(theme) {
+            const root = document.documentElement;
+            const themes = {
+                'dark': {
+                    //default dark theme with blue accents
+                    '--bg-color': '#0a0a0a',
+                    '--block-bg': '#111',
+                    '--title-bg': '#1a1a1a',
+                    '--text-main': '#b0b0b0',
+                    '--accent': '#0088ff',
+                    '--accent-rgb': '0, 136, 255',
+                    '--border': '#333',
+                    '--scanline': 'rgba(0, 136, 255, 0.07)',
+                    '--terminal-green': '#00ff00'
+                },
+                'light': {
+                    //light gray background with red accents
+                    '--bg-color': '#f0f0f0',
+                    '--block-bg': '#ffffff',
+                    '--title-bg': '#e0e0e0',
+                    '--text-main': '#222222',
+                    '--accent': '#d32f2f',
+                    '--accent-rgb': '211, 47, 47',
+                    '--border': '#ccc',
+                    '--scanline': 'rgba(0, 0, 0, 0.03)',
+                    '--terminal-green': '#d32f2f'
+                },
+                'phos': { 
+                    //black background with bright green accents
+                    '--bg-color': '#000500',
+                    '--block-bg': '#001100',
+                    '--title-bg': '#002200',
+                    '--text-main': '#00ff41',
+                    '--accent': '#00ff41',
+                    '--accent-rgb': '0, 255, 65',
+                    '--border': '#004400',
+                    '--scanline': 'rgba(0, 255, 65, 0.1)',
+                    '--terminal-green': '#00ff41'
+                },
+                'cyberpunk': { 
+                    //dark purple background with neon pink and cyan accents
+                    '--bg-color': '#0f0514',
+                    '--block-bg': '#1a0828',
+                    '--title-bg': '#2d0b4d',
+                    '--text-main': '#ff00ff',
+                    '--accent': '#00ffff',
+                    '--accent-rgb': '0, 255, 255',
+                    '--border': '#ff00ff',
+                    '--scanline': 'rgba(255, 0, 255, 0.1)',
+                    '--terminal-green': '#00ffff'
+                },
+                'amber': { 
+                    //dark brown background with amber accents and text
+                    '--bg-color': '#110a00',
+                    '--block-bg': '#221500',
+                    '--title-bg': '#332200',
+                    '--text-main': '#ffb000',
+                    '--accent': '#ffb000',
+                    '--accent-rgb': '255, 176, 0',
+                    '--border': '#553300',
+                    '--scanline': 'rgba(255, 176, 0, 0.1)',
+                    '--terminal-green': '#ffb000'
+                },
+                'shyne': {
+                    //navy background with yellow accents and dark yellow base
+                    '--bg-color': '#0b0c1a',
+                    '--block-bg': '#1a1c33',
+                    '--title-bg': '#2a2d4d',
+                    '--text-main': '#ffff66',
+                    '--accent': '#ffff66',
+                    '--accent-rgb': '255, 255, 102',
+                    '--border': '#666633',
+                    '--scanline': 'rgba(255, 255, 102, 0.1)',
+                    '--terminal-green': '#ffff66'
+                }
+            };
+
+            const selected = themes[theme] || themes['dark'];
+            for (let [key, value] of Object.entries(selected)) {
+                root.style.setProperty(key, value);
+            }
+        }   
+        function saveThemePreference(theme) {
+            localStorage.setItem('preferredTheme', theme);
+            // Visual feedback instead of an annoying popup
+            const btn = document.querySelector("button");
+            btn.innerText = "SAVED!";
+            setTimeout(() => { btn.innerText = "SAVE THEME"; }, 2000);
+        }
+    </script>
+</body>
+</html>
